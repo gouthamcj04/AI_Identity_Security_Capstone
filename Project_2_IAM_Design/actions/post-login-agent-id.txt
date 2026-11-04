@@ -1,0 +1,22 @@
+/**
+ * Auth0 Action: Login / Post Login
+ * Adds an `agent_id` custom claim so every token names the AI agent acting for the user.
+ * Deploy it, then attach it in Actions > Triggers > post-login and click Apply.
+ */
+exports.onExecutePostLogin = async (event, api) => {
+  const NAMESPACE = 'https://securenova.local';
+  const AGENT_ID = 'securenova-support-agent-01';
+
+  // Namespaced claim: Auth0 recommends namespacing custom claims, so this is the reliable one.
+  api.idToken.setCustomClaim(`${NAMESPACE}/agent_id`, AGENT_ID);
+  api.accessToken.setCustomClaim(`${NAMESPACE}/agent_id`, AGENT_ID);
+
+  // Plain claim name used in the brief. Auth0 may ignore non-namespaced claims,
+  // so the try/catch keeps login working either way. Check jwt.io for which one shows.
+  try {
+    api.idToken.setCustomClaim('agent_id', AGENT_ID);
+    api.accessToken.setCustomClaim('agent_id', AGENT_ID);
+  } catch (err) {
+    console.log('Plain agent_id claim not accepted:', err.message);
+  }
+};
