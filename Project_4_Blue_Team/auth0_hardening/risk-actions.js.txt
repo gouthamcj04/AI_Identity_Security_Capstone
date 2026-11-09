@@ -1,0 +1,31 @@
+/**
+ * Auth0 Action: Login / Post Login -- custom risk condition (Project 4, item 1 overlap
+ * with Project 2's Attack Protection, and the brief's "custom risk condition" Action).
+ *
+ * Denies login when the request's country is outside an allowlist you control. This is
+ * a deliberately simple, explainable risk signal -- swap ALLOWED_COUNTRY_CODES for
+ * your own test country, or replace the condition with a different one (e.g. a new
+ * device flag, event.request.asn) if your assessor wants a different risk basis.
+ *
+ * Deploy: Actions > Library > Create Action > Build from scratch > Login/Post Login
+ * trigger. Paste this in, Deploy, then drag it into the post-login flow and Apply.
+ */
+exports.onExecutePostLogin = async (event, api) => {
+  // ISO 3166-1 alpha-2 codes. Set this to the country you'll actually be testing from,
+  // so your 10 legitimate logins don't get blocked by your own rule.
+  const ALLOWED_COUNTRY_CODES = ['US', 'IN', 'GB'];
+
+  const country = event.request.geoip && event.request.geoip.countryCode2;
+
+  if (country && !ALLOWED_COUNTRY_CODES.includes(country)) {
+    api.access.deny(
+      'geo_risk_block',
+      `Login blocked: request originated from an unexpected country (${country}).`
+    );
+    return;
+  }
+
+  // Record the signal either way so Monitoring > Logs shows the Action ran and what
+  // it decided, which is useful evidence for your false-positive-rate screenshot.
+  api.user.setAppMetadata('last_login_country_checked', country || 'unknown');
+};
